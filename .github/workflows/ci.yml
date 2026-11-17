@@ -16,7 +16,7 @@ concurrency:
 jobs:
   swift-format:
     name: swift-format (lint)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # setup-swift@v2 does not support Ubuntu 26.04 (ubuntu-latest)
     timeout-minutes: 10
     permissions:
       contents: read
