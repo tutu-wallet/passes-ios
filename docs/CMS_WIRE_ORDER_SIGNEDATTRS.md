@@ -1,121 +1,106 @@
 # Wire-order `signedAttrs` and the CMS algorithm pre-pass
 
 Background for `SignatureVerifier.swift`, `WireOrderSignedAttrs.swift` and
-`CMSSignatureAlgorithmNormalizer.swift`. Beads: `ipass-10g`, `ipass-c8p`, `ipass-vjt`.
-Android counterparts: `wpass-x70` (824abc5), GH `walt-app/walt-passes-android#176`.
+`CMSSignatureAlgorithmNormalizer.swift`.
 
 ## The bug
 
-RFC 5652 says a CMS signature covers the DER encoding of `SignedAttributes`, and DER
-requires a SET's elements sorted by their encodings. Some issuers' tooling signs the
-elements in the order it emitted them instead. Observed on Android: `contentType`,
-`messageDigest`, `signingTime`, whose encodings `0x18` / `0x23` / `0x1c` are not
-ascending.
+RFC 5652 says a CMS signature covers the DER encoding of `SignedAttributes`, and DER requires a
+SET's elements sorted by their encodings. Some issuers' tooling signs the elements in the order
+it emitted them instead (seen: `contentType`, `messageDigest`, `signingTime`, whose encodings
+`0x18` / `0x23` / `0x1c` are not ascending).
 
-iOS hits this through a different arm than Android did. swift-asn1's `DER.lazySet`
-throws `"SET OF fields are not lexicographically ordered"`, and `CMSSignerInfo`
-deliberately routes `signedAttrs` through `DER.set`, so the blob fails at **parse** and
-swift-certificates supplies nothing. BouncyCastle instead parsed the set and only then
-re-encoded it sorted before hashing. Hence iOS reported
-`Tampered(SignatureCryptoFailure)` where Android reported
-`Tampered(ManifestSignatureMismatch)`: the same rejection of a sound pass, a different
-arm.
-
-Apple Wallet, Google Wallet, FossWallet and OpenSSL all verify over the bytes as
-received and accept these passes.
+swift-asn1's `DER.lazySet` throws `"SET OF fields are not lexicographically ordered"`, and
+`CMSSignerInfo` deliberately routes `signedAttrs` through `DER.set`, so such a blob fails at
+parse and swift-certificates supplies nothing. Apple Wallet, Google Wallet, FossWallet and
+OpenSSL all verify over the bytes as received and accept these passes. BouncyCastle on Android
+parses the set and re-encodes it sorted before hashing, so Android reports
+`Tampered(ManifestSignatureMismatch)` where iOS would report `Tampered(SignatureCryptoFailure)`:
+the same wrongful rejection of a sound pass, through a different arm.
 
 ## Why the fallback is shaped the way it is
 
 swift-certificates parses `SignerInfo.signedAttrs` as OPTIONAL, and when it is absent
-`CMS.isValidSignature` verifies the signature directly over the `dataBytes` it is
-handed. So the fallback strips `[0] signedAttrs` from the blob and passes the attribute
-bytes, exactly as received, as `dataBytes`. The library still locates the signer
-certificate, enforces its own
-`digestAlgorithmFor(signatureAlgorithm) == digestAlgorithm` cross-check, verifies the
-signature under the leaf's public key, and builds the chain through the same `Verifier`
-and `PermissivePolicy` as the strict path. No second copy of the
+`CMS.isValidSignature` verifies the signature directly over the `dataBytes` it is handed. The
+fallback strips `[0] signedAttrs` from the blob and passes the attribute bytes, exactly as
+received, as `dataBytes`. The library still locates the signer certificate, enforces its own
+`digestAlgorithmFor(signatureAlgorithm) == digestAlgorithm` cross-check, verifies the signature
+under the leaf's public key, and builds the chain through the same `Verifier` and
+`PermissivePolicy` as the strict path. No second copy of the
 `appleVerified` / `selfSigned` / `certChainIncomplete` mapping exists.
 
-This was a user-approved §7 decision (2026-08-04, recorded on `ipass-10g`), chosen over
-a full hand-parse that would also have re-implemented the leaf selection and the chain
-classification.
-
-Ruled out during investigation, with the reasons, so they are not revisited:
+Rejected alternatives:
 
 - **Reusing the library's parsed structures.** `CMSContentInfo` / `CMSSignedData` /
-  `CMSSignerInfo` are `internal`, not `@_spi(CMS) public`. Unreachable.
-- **Letting the library classify the chain on the unmodified blob.**
-  `CMS.isValidSignature` checks the signature before the chain, so a blob whose
-  signature it rejects never reaches chain validation.
-- **Sorting `signedAttrs` into DER order and re-verifying.** The signature is over the
-  unsorted bytes, so this reproduces the failure.
+  `CMSSignerInfo` are `internal`, not `@_spi(CMS) public`.
+- **Letting the library classify the chain on the unmodified blob.** `CMS.isValidSignature`
+  checks the signature before the chain, so a blob whose signature it rejects never reaches
+  chain validation.
+- **Sorting `signedAttrs` into DER order and re-verifying.** The signature is over the unsorted
+  bytes, so this reproduces the failure.
+- **A full hand-parse.** It would re-implement leaf selection and chain classification.
 
-## Why the fallback's own digest comparison is load-bearing
+## The fallback's own digest comparison is load-bearing
 
-Stripping `signedAttrs` also strips the one signed attribute the library validates: it
-compares `messageDigest` against the digest of the content, and it never looks at
-`contentType`. Without re-doing that comparison a tampered `manifest.json` would keep a
-perfectly valid signature over its untouched attributes and verify. Mutation-tested:
-removing the comparison makes a tampered manifest pass.
-
-Both halves of the binding are read from one parse, so the digest checked is lifted out
-of the very bytes verified.
+Stripping `signedAttrs` also strips the one signed attribute the library validates: it compares
+`messageDigest` against the digest of the content, and never looks at `contentType`. Without
+redoing that comparison, a tampered `manifest.json` would keep a valid signature over its
+untouched attributes and verify. Mutation-tested: removing the comparison makes a tampered
+manifest pass. Both halves of the binding are read from one parse, so the digest checked is
+lifted out of the very bytes verified.
 
 ## Fail-closed floor
 
-The fallback returns nil - leaving the strict path's verdict standing, never relabelling
-it - for anything but a definite-length DER blob carrying a single SignerInfo with a
-present `[0] signedAttrs` holding exactly one single-valued `messageDigest` whose digest
-matches. Indefinite-length BER lands here too, since `DER.parse` rejects it, so the
-fallback is deliberately narrower than the strict path it recovers from.
+The fallback returns nil, leaving the strict path's verdict standing and never relabelling it,
+for anything but a definite-length DER blob carrying a single SignerInfo with a present
+`[0] signedAttrs` holding exactly one single-valued `messageDigest` whose digest matches.
+Indefinite-length BER lands here too, since `DER.parse` rejects it, so the fallback is
+deliberately narrower than the strict path it recovers from.
 
-The single-signer guard is **load-bearing, not defense-in-depth**: `reserialized` emits
-exactly one SignerInfo, so the library never sees extra signers and its own
-`"Too many signatures"` check cannot catch them. Mutation-tested.
+The single-signer guard is load-bearing, not defense-in-depth: `reserialized` emits exactly one
+SignerInfo, so the library never sees extra signers and its own `"Too many signatures"` check
+cannot catch them. Mutation-tested.
 
 ## The algorithm pre-pass
 
-`normalizeCMSSignatureAlgorithm` fixes two encodings swift-certificates 1.19.x rejects,
-both targeted structurally at the sole SignerInfo so certificates are never touched:
+`normalizeCMSSignatureAlgorithm` fixes two encodings swift-certificates 1.19.x rejects, both
+targeted structurally at the sole SignerInfo so certificates are never touched:
 
-1. **Bare `rsaEncryption` `signatureAlgorithm`** -> the implied
-   `shaNNNWithRSAEncryption`. Apple PassKit ships the bare OID.
-2. **`digestAlgorithm` parameters in the encoding the library does not derive** -> the
-   one it does. `AlgorithmIdentifier(digestAlgorithmFor:)` maps `.sha1WithRSAEncryption`
-   to `.sha1`, which carries NULL, and every SHA-2 signature algorithm to a `…UsingNil`
+1. **Bare `rsaEncryption` `signatureAlgorithm`** -> the implied `shaNNNWithRSAEncryption`. Apple
+   PassKit ships the bare OID.
+2. **`digestAlgorithm` parameters in the encoding the library does not derive** -> the one it
+   does. `AlgorithmIdentifier(digestAlgorithmFor:)` maps `.sha1WithRSAEncryption` to `.sha1`,
+   which carries NULL, and every SHA-2 signature algorithm to a `...UsingNil`
    (absent-parameters) variant. The comparison is `==` on a synthesized `Hashable`, so
-   parameters must match exactly: an absent-parameters SHA-1 identifier fails, and so does
-   a NULL-carrying SHA-2 one. RFC 5754 s2 says generators MUST omit the parameters for
-   SHA-2 but receivers MUST accept both encodings, so both shapes are legal on the wire.
+   parameters must match exactly: an absent-parameters SHA-1 identifier fails, and so does a
+   NULL-carrying SHA-2 one. RFC 5754 s2 says generators MUST omit the parameters for SHA-2 but
+   receivers MUST accept both, so both shapes are legal on the wire.
 
-On (2), the two arms have different provenance. Both real SHA-1 pkpasses inspected encode
-`SEQUENCE { sha1, NULL }` at both levels, the shape the library accepts, so the SHA-1 arm
-closes a legal-encoding gap rather than an observed failure. The SHA-2 arm is an observed
-failure (`ipass-vjt`): Apple PassKit and Tixly encode SHA-256 with parameters absent, but
-Tickster (`pass.com.tickster.common`) encodes `SEQUENCE { sha256, NULL }` at both levels,
-and every Tickster pass read `Tampered` on iOS from the first release. The
-`apple-signed-sha256-null/` test fixture is a real Tickster signature.
+On (2), the SHA-2 arm answers an observed failure: Apple PassKit and Tixly encode SHA-256 with
+parameters absent, but Tickster (`pass.com.tickster.common`) encodes `SEQUENCE { sha256, NULL }`
+at both levels. The `apple-signed-sha256-null/` test fixture is a real Tickster signature. The
+SHA-1 arm closes a legal-encoding gap: both real SHA-1 pkpasses inspected already carry NULL at
+both levels.
 
-Android is no guide to whether either gap matters, because it cannot exhibit them.
-BouncyCastle's `DefaultCMSSignatureAlgorithmNameGenerator.getSignatureName` resolves the
-algorithm from the two OIDs alone and never reads `getParameters()` (verified by `javap`
-against bcpkix-jdk18on 1.84), so both encodings work there. The Tickster pass verified on
-Android and read `Tampered` on iOS: a parity divergence, which is why both arms are
-carried.
+Android cannot exhibit either gap: BouncyCastle's
+`DefaultCMSSignatureAlgorithmNameGenerator.getSignatureName` resolves the algorithm from the two
+OIDs alone and never reads `getParameters()` (checked against bcpkix-jdk18on 1.84). The Tickster
+pass verifies on Android and would read `Tampered` on iOS without the rewrite, which is why both
+arms are carried.
 
 Two levels carry a `digestAlgorithm`: the SignerInfo, and the SignedData-level
-`digestAlgorithms` SET. The library checks them separately - `expectedDigestAlgorithm ==
-signer.digestAlgorithm` for the first, `digestAlgorithms.contains(signer.digestAlgorithm)`
-for the second - so both must end up in the derived encoding. Nothing requires an issuer
-to use the same encoding at both levels, and all four combinations are legal, so the two
-are evaluated independently and whichever side differs is rewritten. Fixing one level
-alone just trades one false `Tampered` for another.
+`digestAlgorithms` SET. The library checks them separately (`expectedDigestAlgorithm ==
+signer.digestAlgorithm` for the first, `digestAlgorithms.contains(signer.digestAlgorithm)` for
+the second), so both must end up in the derived encoding. Issuers need not use the same encoding
+at both levels and all four combinations are legal, so each is evaluated independently and
+whichever side differs is rewritten. Fixing one level alone trades one false `Tampered` for
+another.
 
-No rewrite is attempted unless the SET is a single identifier for the same digest that
-can be kept in step: the library parses it with `DER.set`, which requires lexicographic
-order, so re-encoding one member of a larger set risks breaking the ordering, and a larger
-set cannot be guaranteed to hold the rewritten identifier the `contains` check looks for.
-Only `SEQUENCE { oid }` and `SEQUENCE { oid, NULL }` are rewritten; any other parameters
-are left alone.
+No rewrite is attempted unless the SET is a single identifier for the same digest that can be
+kept in step: the library parses it with `DER.set`, which requires lexicographic order, so
+re-encoding one member of a larger set risks breaking the ordering, and a larger set cannot be
+guaranteed to hold the rewritten identifier the `contains` check looks for. Only
+`SEQUENCE { oid }` and `SEQUENCE { oid, NULL }` are rewritten; any other parameters are left
+alone.
 
 Neither field is covered by the signature, so no rewrite can make a tampered pass verify.
