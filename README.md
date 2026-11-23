@@ -7,7 +7,7 @@ This is the iOS counterpart of
 consumed by [`walt-app/ios`](https://github.com/walt-app/ios) as a Swift
 Package dependency.
 
-The two kernels mirror each other's *contracts* — the same result shapes, the
+The two kernels mirror each other's *contracts*: the same result shapes, the
 same trust-claim surface, the same faithful-payload posture. They are allowed to
 diverge where the platforms' process models genuinely differ, and where they do,
 the ADR for that area records why. `DecodeFailureReason.decodeTimedOut` is the
