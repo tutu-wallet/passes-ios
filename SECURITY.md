@@ -2,7 +2,7 @@
 
 `passes-iOS` is a security-sensitive component of Walt: parsed PDF passes,
 their encrypted storage, and rendering go through this package. The
-trust-claim surface mirrors `walt-passes-android`.
+trust-claim surface mirrors `passes-android`.
 
 ## Trust-claim surface
 
@@ -13,8 +13,8 @@ Implementations of the public protocols in this package MUST uphold:
   branching may relax validation.
 - **Bounded work.** PDF decode, image decode, and parser CPU time are
   bounded. The format-level threats are enumerated once for both platforms
-  in the walt-passes-android
-  [PDF threat model](https://github.com/walt-app/walt-passes-android/blob/main/docs/PDF_THREAT_MODEL.md);
+  in the passes-android
+  [PDF threat model](https://github.com/tutu-wallet/passes-android/blob/main/docs/PDF_THREAT_MODEL.md);
   where the iOS controls differ, the decision is recorded in `docs/adr/`.
 - **No content in logs.** Telemetry uses enum-only signatures; pass content
   and PII are never logged or sent to a network.

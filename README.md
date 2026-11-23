@@ -1,9 +1,9 @@
 # passes-iOS
 
-Walt Passes for iOS — PDF pass parser, encrypted storage, secure rendering.
+Walt Passes for iOS: PDF pass parser, encrypted storage, secure rendering.
 
 This is the iOS counterpart of
-[`walt-passes-android`](https://github.com/walt-app/walt-passes-android) and is
+[`passes-android`](https://github.com/tutu-wallet/passes-android) and is
 consumed by [`walt-app/ios`](https://github.com/walt-app/ios) as a Swift
 Package dependency.
 
@@ -26,8 +26,8 @@ UI target) so the logic stays testable without a UI host.
 | `PassesCore` | Domain types, the `PassParser` trust-claim surface, and pkpass signature verification (swift-certificates) |
 | `PassesBarcode` | Bounded barcode decode (Vision) over still images and camera frames |
 | `PassesImageDecode` | Shared header-gated bounded decode mechanism (no public product) |
-| `PassesImage` | In-process bounded image decode-and-retain (§7, `image-decode-1`) |
-| `PassesDocument` | Sniff-and-branch document import + composite confirm seam (§7, `image-decode-1`) |
+| `PassesImage` | In-process bounded image decode-and-retain (`image-decode-1`) |
+| `PassesDocument` | Sniff-and-branch document import + composite confirm seam (`image-decode-1`) |
 | `PassesPDFCore` | Pure PDF parsing/validation and the sealed `Document` model family |
 | `PassesPDF` | PDF import and bounded rendering |
 | `PassesPDFUI` | SwiftUI document views |
