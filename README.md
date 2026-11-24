@@ -10,10 +10,9 @@ Package dependency.
 The two kernels mirror each other's *contracts*: the same result shapes, the
 same trust-claim surface, the same faithful-payload posture. They are allowed to
 diverge where the platforms' process models genuinely differ, and where they do,
-the ADR for that area records why. `DecodeFailureReason.decodeTimedOut` is the
-current example: Android kills its isolated decode process and cannot observe a
-timeout separately from an absent decoder, while iOS cannot kill Vision
-mid-decode and must distinguish the two (see
+the ADR for that area records why. `DecodeFailureReason.decodeTimedOut` shows the
+difference: Android kills its isolated decode process at the budget, while iOS
+cannot kill Vision mid-decode, so its timeout bounds only the caller's wait (see
 [`docs/adr/barcode-decode-1.md`](docs/adr/barcode-decode-1.md)).
 
 ## Modules
