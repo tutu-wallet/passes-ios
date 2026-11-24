@@ -13,10 +13,10 @@ it emitted them instead (seen: `contentType`, `messageDigest`, `signingTime`, wh
 swift-asn1's `DER.lazySet` throws `"SET OF fields are not lexicographically ordered"`, and
 `CMSSignerInfo` deliberately routes `signedAttrs` through `DER.set`, so such a blob fails at
 parse and swift-certificates supplies nothing. Apple Wallet, Google Wallet, FossWallet and
-OpenSSL all verify over the bytes as received and accept these passes. BouncyCastle on Android
-parses the set and re-encodes it sorted before hashing, so Android reports
-`Tampered(ManifestSignatureMismatch)` where iOS would report `Tampered(SignatureCryptoFailure)`:
-the same wrongful rejection of a sound pass, through a different arm.
+OpenSSL all verify over the bytes as received and accept these passes. Without a fallback, both kernels wrongly
+reject these passes, through different arms. BouncyCastle parses the set and re-encodes it sorted
+before hashing, so Android reported `Tampered(ManifestSignatureMismatch)`. swift-certificates fails at
+parse, so iOS reported `Tampered(SignatureCryptoFailure)`. Each kernel now carries a wire-order fallback.
 
 ## Why the fallback is shaped the way it is
 

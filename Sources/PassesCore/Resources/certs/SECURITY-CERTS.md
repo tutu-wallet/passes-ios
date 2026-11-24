@@ -1,9 +1,9 @@
 # Bundled Apple Trust Anchors
 
-This directory holds the certificates `SignatureVerifier` consults when classifying a PKCS#7
+This directory holds the certificates `verifySignature` (in `Internal/SignatureVerifier.swift`) consults when classifying a PKCS#7
 signature blob's chain. They load once as a static set (`AppleTrustAnchors.swift`); the parser
 never fetches certificates over the network. A valid signature whose chain extends beyond what is
-bundled here surfaces as `SignatureStatus.certChainIncomplete`.
+bundled here surfaces as `SignatureStatus.certChainIncomplete` under the default lenient config; with `acceptSelfSignedCertificates: false` (`ParserConfig.strict`) the result is `tampered(.signatureUntrusted)` (`SignatureVerifier.swift:21-25`; test `wireOrderSignedAttrsRejectedUnderStrictConfig`).
 
 ## Trust anchors (root CAs)
 
@@ -34,7 +34,7 @@ coverage.
 
 ## Sources
 
-The five certificates were exported from the macOS system keychain and cross-checked against
+On 2026-05-05 the five certificates were exported from the macOS system keychain and cross-checked against
 the copies inside `Xcode.app`'s `DVTFoundation.framework`. The fingerprints match the values
 Apple publishes at
 <https://www.apple.com/certificateauthority/>.
@@ -53,5 +53,7 @@ decision: it changes the set of signers considered Apple-issued. The change must
 1. Update this file (table row, source, SHA-256 fingerprint).
 2. Update `bundledTrustAnchorFilenames` and `bundledIntermediateFilenames` in
    `AppleTrustAnchors.swift`.
-3. Pass `swift test`: `AppleTrustAnchorsTests` enforces that the bundled files load and the
-   counts match.
+3. Update the expected counts in `AppleTrustAnchorsTests` and pass `swift test`. The test checks that
+   the bundled files load, the counts match and root subjects are distinct; it does not check the
+   fingerprints above, so re-derive each changed fingerprint with the `openssl` command and compare
+   it with Apple's published value.
