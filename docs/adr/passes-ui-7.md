@@ -10,14 +10,14 @@ So colour is decoupled from the issuer (every pkpass renders its class tint rega
 
 **The verified-band confusion class (C1/C2) stays closed:**
 
-1. No surface presents as verified. No list card of any class renders a signature affordance, and no card face carries one at detail scale, so there is no verified visual for a user-created card to imitate.
+1. No surface presents as verified. In the consumer's design, no list card of any class renders a signature affordance and no card face carries one at detail scale, so there is no verified visual for a user-created card to imitate; the kernel's `PassFront` badge is on by default and is suppressed only through the bounded `showSignatureBadge` opt-out.
 2. Signature status is stated in words, on the detail surface only. Text, not chrome, so a colour choice cannot imitate it.
 3. Colour is uniform per class by default and user-reassignable. A Bronze PDF or a Teal pkpass is a user preference, not a spoof, and nothing may be inferred from it. Colour any user can reassign cannot encode provenance even accidentally.
 
 **Kernel surface.** `ScannableCardScreen(faceTint:)` and `DocumentView(faceTint:)` let the consumer tint the card face without reimplementing these surfaces. Both are presentation-only:
 
 - The tint reaches the card face only; the panel behind a code stays literally white in both themes and the rasterised page renders identically tinted or not.
-- Neither parameter can suppress the barcode, the payload readback or the trust caption (the C2 note): `faceTint` is not a second route to the C2 bypass the `HostedTypeRow` concession audits. Pinned by `ScannableCardFaceTintTests`.
+- Neither parameter can suppress the barcode, the payload readback or the trust caption (the C2 note): `faceTint` is not a second route to the C2 bypass the `HostedTypeRow` concession audits. No test pins that the barcode, readback and caption survive a tint; `ScannableCardSurfaceLockTests` pins the initialiser's parameter shape.
 - Ink on a tinted face derives from the tint's luminance at >= 4.5:1, so the in-words provenance signal cannot be tuned away by a hostile or careless tint.
 - The kernel stores no colour. No `ScannableCard` or `Document` model or storage column carries one; which colour an item wears is consumer state.
 - Both arms decide "is this a tint" through the shared `faceIsTinted` predicate (`PassesUICore.FaceTint`, pinned by `FaceTintTests`), so a fully transparent tint falls back to the untinted default on either arm.
