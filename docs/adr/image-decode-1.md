@@ -1,6 +1,6 @@
 # ADR image-decode-1: In-process bounded image decode-and-retain
 
-Status: accepted (human security approval; the §7 priced deviation).
+Status: accepted (human security approval of the priced in-process deviation).
 
 Mirrors Android `passes-image` / `passes-image-decode` (ADR 0005 addendum I1-I5), reshaped for a platform with no isolated child process. Sibling of `barcode-decode-1` Deviation 2, which took in-process bounded decode for barcode reads; this ADR extends that posture to decoding and retaining arbitrary user images as wallet documents.
 
@@ -8,7 +8,7 @@ Mirrors Android `passes-image` / `passes-image-decode` (ADR 0005 addendum I1-I5)
 
 Android decodes every image byte inside a permission-stripped `isolatedProcess` service: a codec exploit lands in a process with no permissions or app data, and a watchdog kills it at the 5 s budget. iOS decodes in the app process. A sufficiently capable ImageIO exploit therefore lands in the app itself: app compromise, on-device data theft and, once a payment SDK ships, SDK-bounded fraud. No cap below changes where it lands, only how hard it is to deliver.
 
-Residual risk accepted, priced for a device assumed payment-capable: a one-shot, PAC-defeating ImageIO zero-day delivered via a user-imported shared file. Mitigations that keep it one-shot-shaped: a single passive decode per document (no scripting environment, no attacker-paced retries), header caps before any allocation, and the render-once contract (originals are never re-decoded; display consumes app-produced rasters).
+Residual risk accepted, priced for a device assumed payment-capable: a one-shot, PAC-defeating ImageIO zero-day delivered via a user-imported shared file. Mitigations: each decode is passive (no scripting environment, no attacker-paced retries) and header-capped before any allocation. Import runs one retained-lane decode (a composite adds one read-lane decode). Display then re-decodes the original through the same bounded `BoundedImageDecoder` lane each time an image document's detail surface appears (`DocumentImageViewModel` drops the pixels on disappear and re-decodes on return), so every user open is a further decode of the attacker's bytes under the same caps. Only PDFs keep originals away from display (`pdf-render-once-1`).
 
 ## Three lanes
 

@@ -4,7 +4,7 @@ Apple ships no CoreImage generator for EAN-13, UPC-A or Code39, so `PassesCore.O
 
 ## One encode entry point
 
-`PassesCore.BarcodeEncoder` is the single encode entry for every format. The 1D trio goes through `OneDimensionalBarcodeEncoder`; QR, Code128, PDF417 and Aztec go through the CoreImage generators (pinned error correction and the Latin-1 charset posture are in `barcode-decode-1`). `BarcodeRenderer.cgImage(payload:format:)`, `CompactCodeView.renderImage` and the trial-encode gate on the storage layer's scannable-card write paths all call it, so save-time approval and draw-time render judge encodability with the same code and cannot diverge.
+`PassesCore.BarcodeEncoder` is the single encode entry for every `ScannableFormat`. The 1D trio goes through `OneDimensionalBarcodeEncoder`; QR, Code128, PDF417 and Aztec go through the CoreImage generators (pinned error correction and the Latin-1 charset posture are in `barcode-decode-1`). `BarcodeRenderer.cgImage(payload:format:)`, `CompactCodeView.renderImage` and the trial-encode gate on the storage layer's scannable-card write paths all call it, so save-time approval and draw-time render judge encodability with the same code and cannot diverge.
 
 The encoder re-validates structure (charset, exact length, check digit via `ScannableFormatConstraints`) and returns `nil` on failure. It refuses an empty payload for every format, so an empty QR renders the failure tile rather than the empty-but-scannable symbol `CIQRCodeGenerator` emits; a persisted row is never empty, so this is reachable only with a caller-constructed in-memory card.
 
@@ -16,7 +16,7 @@ Correctness is pinned by structural table tests plus a Vision decode round-trip 
 
 Android pins ZXing's QR character set to UTF-8 with an ECI header because ZXing otherwise transliterated non-Latin-1 payloads. `CIQRCodeGenerator` always encodes raw UTF-8 bytes and exposes no ECI control, and hand-rolling a QR encoder only to emit the header was rejected. The de-facto mobile convention, UTF-8 without ECI, is accepted.
 
-- `QrCharsetRoundTripTests` round-trips Android's original defect payload ("café - naïve - 東京"), CJK-only and supplementary-plane payloads verbatim through `BarcodeEncoder` and Vision.
+- `QrCharsetRoundTripTests` round-trips Android's original defect payload (accented Latin plus CJK; literal at `QrCharsetRoundTripTests.swift:22`), CJK-only and supplementary-plane payloads verbatim through `BarcodeEncoder` and Vision.
 - `qrByteModeCeilingIsExactAtTheBoundary` pins the absence of an ECI header: its 2331-byte success arm fails if the generator ever spends capacity on one (Vision decodes both forms alike, so the round-trip suite cannot detect it). The v40-M byte-mode ceiling is therefore 2331 on iOS where Android's header lowers it to 2330.
 - Residual accepted risk: a strictly spec-conformant reader defaults ECI-less symbols to Latin-1 and shows mojibake for non-ASCII payloads. ASCII is unambiguous everywhere.
 

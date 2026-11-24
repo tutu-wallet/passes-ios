@@ -8,4 +8,4 @@ The gesture surface (pinch, pan, double-tap) lives in the shared `Internal/Zooma
 
 Trust posture is unaffected: sub-rect rendering is a sharpness optimisation, not a trust control.
 
-Android source: `passes-android-main/passes-pdf-ui/src/main/kotlin/is/walt/passes/pdf/ui/internal/ZoomableImage.kt`, `FullScreenDocumentView.kt`.
+Android source: `passes-android-main/passes-document-ui/src/main/kotlin/is/walt/passes/document/ui/internal/ZoomableImage.kt`, `.../document/ui/FullScreenDocumentView.kt`.

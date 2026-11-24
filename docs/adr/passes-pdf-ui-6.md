@@ -6,4 +6,4 @@ A horizontal pager with a next/previous-page peek needs three things from the ke
 2. **Eviction cannot invalidate a displayed page.** `RenderedPageCache` eviction releases the kernel's reference only (`onEvict` is a no-op for `PageImage`), and `PageImageHandle` holds its own strong `CGImage`-backed `Image`. Android's recycle-while-painted crash class is structurally absent under ARC.
 3. **Adjacent-page prefetch needs no dedicated API.** Peeked pages are real visible views, each rendering through its own `PDFThumbnailViewModel` into the shared lock-guarded per-document cache. Warming beyond the peek is possible with the same public surface by driving a spare `PDFThumbnailViewModel` without mounting a view. No speculative prefetch API is added; a measured loading flash would reopen that.
 
-Android source: `passes-android-main/passes-pdf-ui`.
+Android source: `passes-android-main/passes-document-ui`.

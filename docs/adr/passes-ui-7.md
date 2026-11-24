@@ -4,7 +4,7 @@ iOS anchor for Android's colour-system revisions to `SCANNABLE_CARD_THREAT_MODEL
 
 ## Colour carries no trust meaning, for any class
 
-The consumer rules, verbatim from the Android row: colour means class, nothing else; the pass file's `backgroundColor` is read, never rendered; card stock is identical in light and dark; no previews on list cards; expired washes out instead of tinting; any item is user-reassignable; no card presents as verified, and signature is stated in words, on detail.
+The consumer rules, paraphrasing the Android row: colour means class, nothing else; the pass file's `backgroundColor` is read, never rendered; card stock is identical in light and dark; no previews on list cards; expired washes out instead of tinting; any item is user-reassignable; no card presents as verified, and signature is stated in words, on detail.
 
 So colour is decoupled from the issuer (every pkpass renders its class tint regardless of `backgroundColor`), applies to every artifact class (documents and scannables carry a tint too), and is user-reassignable per item from a seven-colour palette.
 

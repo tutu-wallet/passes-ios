@@ -4,7 +4,7 @@ Status: accepted. iOS-only deviation from Android.
 
 ## Context
 
-The iOS kernel parses untrusted PDFs in-process with PDFKit/CoreGraphics (`data-passes-1` records the deviation from Android's isolated `:pdfRenderer`). PDF is the compound, compute-bearing format of the roster (JBIG2/JPX filters, embedded fonts; the FORCEDENTRY class), and the iOS `ProcessKiller` behind the render watchdog is a no-op. Re-parsing the original untrusted bytes on every detail open made display the worst-contained untrusted-parse surface, so display must never touch the originals.
+The iOS kernel parses untrusted PDFs in-process with PDFKit/CoreGraphics (Android ADR 0005 D3 isolates it in `:pdfRenderer`). PDF is the compound, compute-bearing format of the roster (JBIG2/JPX filters, embedded fonts; the FORCEDENTRY class), and the iOS `ProcessKiller` behind the render watchdog is a no-op. Re-parsing the original untrusted bytes on every detail open made display the worst-contained untrusted-parse surface, so display must never touch the originals.
 
 ## Decision
 
