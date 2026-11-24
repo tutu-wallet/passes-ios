@@ -4,7 +4,7 @@ Walt Passes for iOS: PDF pass parser, encrypted storage, secure rendering.
 
 This is the iOS counterpart of
 [`passes-android`](https://github.com/tutu-wallet/passes-android) and is
-consumed by [`walt-app/ios`](https://github.com/walt-app/ios) as a Swift
+consumed by `tutu-wallet/ios` (private) as a Swift
 Package dependency.
 
 The two kernels mirror each other's *contracts*: the same result shapes, the
