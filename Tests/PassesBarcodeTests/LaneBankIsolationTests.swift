@@ -5,8 +5,8 @@ import Testing
 
 /// The two properties a saturated bank has to hold, exercised against banks small enough to fill
 /// deterministically. A production bank is 40 slots, and "40 holders must start" asserts how fast the
-/// runner mints threads rather than anything about this code — the flake ADR `barcode-decode-1`
-/// records twice. One lane and no spill reaches the same states with one holder.
+/// runner mints threads rather than anything about this code (ADR `barcode-decode-1`, lane banks and test seams).
+/// One lane and no spill reaches the same states with one holder.
 @Suite("LaneBankIsolation")
 struct LaneBankIsolationTests {
     private func oneSlotBank(_ name: String) -> DecodeLanes {

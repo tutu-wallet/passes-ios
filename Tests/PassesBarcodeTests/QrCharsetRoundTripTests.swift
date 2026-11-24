@@ -4,8 +4,8 @@ import Testing
 
 @testable import PassesBarcode
 
-/// Pins the QR charset posture (ios-pjs.20, wpass-qj6 analogue; full record in ADR
-/// `passes-ui-2`, human-approved 2026-08-17): non-Latin-1 payloads round-trip verbatim
+/// Pins the QR charset posture (full record in ADR `passes-ui-2`, section "QR ships UTF-8
+/// without an ECI header"): non-Latin-1 payloads round-trip verbatim
 /// through the production `BarcodeEncoder` -> Vision path, proving both ends agree on
 /// UTF-8. The ECI-absence half of the posture is pinned by
 /// `qrByteModeCeilingIsExactAtTheBoundary` (an emitted ECI header would cost the 2331st

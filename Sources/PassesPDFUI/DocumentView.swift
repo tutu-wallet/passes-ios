@@ -27,10 +27,11 @@ import SwiftUI
 /// The backend handles are kind-specific and optional: a consumer supplies
 /// `pages` (the ios-dts.16 stored-raster source) for a `PDFDocument`, and the
 /// `imageSource` / `imageDecoder` pair for an `ImageDocument` or
-/// `BarcodedImageDocument` — `imageSource` is the ORIGINAL image bytes, whose
-/// display-scale re-decode is allowed only through the bounded decoder (the
-/// §7 lane; `image-decode-1`). Prefer `.fileURL` for display: a `.data` source
-/// keeps the whole original resident on this struct for the surface lifetime,
+/// `BarcodedImageDocument` — `imageSource` is decoded only through the bounded
+/// decoder (the §7 lane; `image-decode-1`). The kernel does not check what it
+/// holds: a consumer passes the stored display raster, never the original.
+/// Prefer `.fileURL` for display: a `.data` source
+/// keeps the whole raster resident on this struct for the surface lifetime,
 /// where a file URL keeps Data Protection on the bytes until the lane reads
 /// them. The dispatcher requires the pair matching the
 /// arm; passing a document without its backend is a programming error and
@@ -203,7 +204,7 @@ private struct PdfDocumentView: View {
 /// Presentation of an `ImageDocument` — the non-suppressible trust caption
 /// above a single, fixed-fit image: the image-arm analogue of
 /// `PdfDocumentView`, minus the pager (an image is a single page, so no
-/// `TabView` and no cache). The original image is decoded once through the §7
+/// `TabView` and no cache). The supplied source is decoded once through the §7
 /// bounded lane (the caller-supplied `BoundedImageDecoder` protocol, never a
 /// concrete type) and the raster is letterboxed into the slot. A
 /// `BarcodedImageDocument` renders its image half here identically — the

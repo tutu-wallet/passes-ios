@@ -2,8 +2,7 @@ import PassesCore
 import Vision
 
 /// The symbology ALLOWLIST that clamps the iOS decoder to the full ``ScannableFormat`` roster
-/// (ADR `barcode-decode-1`, revised 2026-07-27 for the five-format Android-parity expansion
-/// and 2026-08-17 for the Aztec + PDF417 growth, matching Android's ZXing
+/// (ADR `barcode-decode-1`, decision and Aztec/PDF417 sections, matching Android's ZXing
 /// `POSSIBLE_FORMATS` pin). Restricting `VNDetectBarcodesRequest.symbologies`
 /// still narrows both the work Vision does and the parser surface a hostile image can reach.
 ///
