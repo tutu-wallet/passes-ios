@@ -58,8 +58,8 @@ public enum DecodeFailureReason: Sendable, CaseIterable {
     ///
     /// One case does NOT recover: once enough wedged decodes have consumed a lane bank, every later
     /// decode on that path is refused and reported here, for the life of the process. Retry cannot
-    /// clear it — only relaunching can. Reporting that state distinctly was weighed and declined
-    /// (ADR barcode-decode-1, 2026-08-06), so a consumer whose retry copy promises "try again in a
+    /// clear it — only relaunching can. Reporting that state distinctly was declined (ADR
+    /// `barcode-decode-1`, decode timeout and lane banks), so a consumer whose retry copy promises "try again in a
     /// moment" is accurate for the common case and wrong for this one.
     case decodeTimedOut
 }

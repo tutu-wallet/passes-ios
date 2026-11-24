@@ -34,8 +34,8 @@ public struct DocumentImageHandle: Sendable {
 /// composable and the image-arm counterpart of ``PDFThumbnailViewModel``. It
 /// consumes a caller-supplied ``PassesImage/BoundedImageDecoder`` (it never
 /// constructs its own, preserving the one-decoder-per-composition-root
-/// discipline), decodes the ORIGINAL image bytes once through the §7 bounded
-/// lane, and exposes only ``DocumentImageState``.
+/// discipline), decodes the caller's `ImageDecodeSource` through the §7 bounded lane
+/// (a consumer passes the stored display raster, not the original), and exposes only ``DocumentImageState``.
 ///
 /// The same facade renders the image of an `ImageDocument` and the image half
 /// of a `BarcodedImageDocument` (wpass-8lu) — `documentId` is the `DocumentId`

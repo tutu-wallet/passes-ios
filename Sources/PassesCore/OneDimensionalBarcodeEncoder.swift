@@ -1,7 +1,7 @@
 import Foundation
 
 /// Kernel-native encoder for the 1D symbologies CoreImage ships no generator
-/// for: EAN-13, UPC-A, and Code 39 (ADR `passes-ui-2`, revised 2026-07-27).
+/// for: EAN-13, UPC-A, and Code 39 (ADR `passes-ui-2`).
 /// QR and Code128 stay on the CoreImage path in `PassesUI.BarcodeRenderer`;
 /// this encoder deliberately returns `nil` for them so there is exactly one
 /// encoder per symbology.
