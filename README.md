@@ -1,19 +1,18 @@
 # passes-iOS
 
-Walt Passes for iOS — PDF pass parser, encrypted storage, secure rendering.
+Walt Passes for iOS: PDF pass parser, encrypted storage, secure rendering.
 
 This is the iOS counterpart of
-[`walt-passes-android`](https://github.com/walt-app/walt-passes-android) and is
+[`passes-android`](https://github.com/tutu-wallet/passes-android) and is
 consumed by [`walt-app/ios`](https://github.com/walt-app/ios) as a Swift
 Package dependency.
 
-The two kernels mirror each other's *contracts* — the same result shapes, the
+The two kernels mirror each other's *contracts*: the same result shapes, the
 same trust-claim surface, the same faithful-payload posture. They are allowed to
 diverge where the platforms' process models genuinely differ, and where they do,
-the ADR for that area records why. `DecodeFailureReason.decodeTimedOut` is the
-current example: Android kills its isolated decode process and cannot observe a
-timeout separately from an absent decoder, while iOS cannot kill Vision
-mid-decode and must distinguish the two (see
+the ADR for that area records why. `DecodeFailureReason.decodeTimedOut` shows the
+difference: Android kills its isolated decode process at the budget, while iOS
+cannot kill Vision mid-decode, so its timeout bounds only the caller's wait (see
 [`docs/adr/barcode-decode-1.md`](docs/adr/barcode-decode-1.md)).
 
 ## Modules
@@ -26,8 +25,8 @@ UI target) so the logic stays testable without a UI host.
 | `PassesCore` | Domain types, the `PassParser` trust-claim surface, and pkpass signature verification (swift-certificates) |
 | `PassesBarcode` | Bounded barcode decode (Vision) over still images and camera frames |
 | `PassesImageDecode` | Shared header-gated bounded decode mechanism (no public product) |
-| `PassesImage` | In-process bounded image decode-and-retain (§7, `image-decode-1`) |
-| `PassesDocument` | Sniff-and-branch document import + composite confirm seam (§7, `image-decode-1`) |
+| `PassesImage` | In-process bounded image decode-and-retain (`image-decode-1`) |
+| `PassesDocument` | Sniff-and-branch document import + composite confirm seam (`image-decode-1`) |
 | `PassesPDFCore` | Pure PDF parsing/validation and the sealed `Document` model family |
 | `PassesPDF` | PDF import and bounded rendering |
 | `PassesPDFUI` | SwiftUI document views |

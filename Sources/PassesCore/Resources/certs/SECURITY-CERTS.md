@@ -1,21 +1,14 @@
 # Bundled Apple Trust Anchors
 
-This directory holds the certificates `verifySignature` consults when classifying
-a PKCS#7 signature blob's chain. They are loaded at parse time as a static set;
-the parser **never** fetches certificates over the network. A valid signature
-whose chain extends beyond what is bundled here surfaces as
-[`SignatureStatus.CertChainIncomplete`].
-
-`AppleTrustAnchors` resolves these files by the **absolute** classpath path
-`/is/walt/passes/core/internal/certs/` so the lookup survives an R8/ProGuard
-consumer build repackaging that class. Moving this directory therefore requires
-updating `RESOURCE_DIR` in `AppleTrustAnchors.kt`; `AppleTrustAnchorsTest`
-consumes that constant directly, so it follows automatically.
+This directory holds the certificates `verifySignature` (in `Internal/SignatureVerifier.swift`) consults when classifying a PKCS#7
+signature blob's chain. They load once as a static set (`AppleTrustAnchors.swift`); the parser
+never fetches certificates over the network. A valid signature whose chain extends beyond what is
+bundled here surfaces as `SignatureStatus.certChainIncomplete` under the default lenient config; with `acceptSelfSignedCertificates: false` (`ParserConfig.strict`) the result is `tampered(.signatureUntrusted)` (`SignatureVerifier.swift:21-25`; test `wireOrderSignedAttrsRejectedUnderStrictConfig`).
 
 ## Trust anchors (root CAs)
 
-These are added to the `PKIXBuilderParameters` trust anchor set. A chain that
-terminates at any of them yields [`SignatureStatus.AppleVerified`].
+These are the trust roots for chain validation. A chain that terminates at any of them
+yields `SignatureStatus.appleVerified`.
 
 | File | Subject | SHA-256 fingerprint | Validity |
 |------|---------|---------------------|----------|
@@ -25,28 +18,25 @@ terminates at any of them yields [`SignatureStatus.AppleVerified`].
 
 ## Known intermediates (WWDR)
 
-These are added to the path builder's cert store so a signature blob that omits
-its intermediate (rare but observed) can still chain to a bundled root. They
-are **not** trust anchors on their own — a chain that stops at one of these
-without reaching a root above is `CertChainIncomplete`, not `AppleVerified`.
+These are added as additional intermediates so a signature blob that omits its
+intermediate can still chain to a bundled root. They are not trust anchors on their
+own: a chain that stops at one of these without reaching a root above is
+`certChainIncomplete`, not `appleVerified`.
 
 | File | Subject | SHA-256 fingerprint | Validity |
 |------|---------|---------------------|----------|
 | `apple-wwdr-g3.cer` | CN=Apple Worldwide Developer Relations Certification Authority, OU=G3, O=Apple Inc., C=US | `DC:F2:18:78:C7:7F:41:98:E4:B4:61:4F:03:D6:96:D8:9C:66:C6:60:08:D4:24:4E:1B:99:16:1A:AC:91:60:1F` | 2020-02-19 to 2030-02-20 |
 | `apple-wwdr-g6.cer` | CN=Apple Worldwide Developer Relations Certification Authority, OU=G6, O=Apple Inc., C=US | `BD:D4:ED:6E:74:69:1F:0C:2B:FD:01:BE:02:96:19:7A:F1:37:9E:04:18:E2:D3:00:EF:A9:C3:BE:F6:42:CA:30` | 2021-03-17 to 2036-03-19 |
 
-The legacy WWDR CA (G1, expired 2023-02-07) is intentionally **not** bundled.
-Reissuing pkpass signatures under that CA was no longer possible after expiry,
-so any signature chaining to it would have to be older than 2023, and the
-upstream issuer (Apple Root CA) covers re-signing under G3/G6 anyway. Bundling
-an expired anchor would muddy the trust posture without buying coverage.
+The legacy WWDR CA (G1, expired 2023-02-07) is intentionally not bundled: any signature chaining
+to it predates 2023, and bundling an expired anchor would muddy the trust posture without buying
+coverage.
 
 ## Sources
 
-The five certificates above were exported from the macOS system keychain on
-2026-05-05 from a fully-updated host (and cross-checked against the copies
-distributed inside `Xcode.app`'s `DVTFoundation.framework`). The fingerprints
-above match the values Apple publishes at
+On 2026-05-05 the five certificates were exported from the macOS system keychain and cross-checked against
+the copies inside `Xcode.app`'s `DVTFoundation.framework`. The fingerprints match the values
+Apple publishes at
 <https://www.apple.com/certificateauthority/>.
 
 A reviewer can re-derive any of these locally with:
@@ -57,15 +47,13 @@ openssl x509 -in <file>.cer -inform DER -noout -subject -fingerprint -sha256
 
 ## Updating
 
-Adding a new root or intermediate (e.g. a future G7 WWDR) is a deliberate trust
-decision: it expands the set of signers we consider Apple-issued. The change
-must:
+Adding or removing a root or intermediate (for example a future G7 WWDR) is a deliberate trust
+decision: it changes the set of signers considered Apple-issued. The change must:
 
-1. Update this file (table row, source attribution, SHA-256 fingerprint).
-2. Update the `BUNDLED_TRUST_ANCHOR_FILENAMES` and
-   `BUNDLED_INTERMEDIATE_FILENAMES` lists in `AppleTrustAnchors.kt`.
-3. Pass `:passes-core:check` — `AppleTrustAnchorsTest` enforces the bundled
-   files load and that the documented anchors are present.
-
-Removing an anchor narrows the trust set and is also deliberate; the same
-checklist applies in reverse.
+1. Update this file (table row, source, SHA-256 fingerprint).
+2. Update `bundledTrustAnchorFilenames` and `bundledIntermediateFilenames` in
+   `AppleTrustAnchors.swift`.
+3. Update the expected counts in `AppleTrustAnchorsTests` and pass `swift test`. The test checks that
+   the bundled files load, the counts match and root subjects are distinct; it does not check the
+   fingerprints above, so re-derive each changed fingerprint with the `openssl` command and compare
+   it with Apple's published value.
