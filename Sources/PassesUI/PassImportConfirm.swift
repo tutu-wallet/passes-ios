@@ -89,22 +89,22 @@ private struct ImportTrustCaption: View {
             case .appleVerified:
                 return (
                     "Verified Apple issuer",
-                    "Walt verified this pass's signature against Apple's issuer chain."
+                    "This app verified this pass's signature against Apple's issuer chain."
                 )
             case .selfSigned:
                 return (
                     "Self-signed issuer",
-                    "The signature is valid but Walt cannot verify who issued this pass."
+                    "The signature is valid but this app cannot verify who issued this pass."
                 )
             case .incomplete:
                 return (
                     "Issuer chain incomplete",
-                    "The pass is signed but Walt could not complete the issuer chain."
+                    "The pass is signed but this app could not complete the issuer chain."
                 )
             case .untrusted:
                 return (
                     "No signature",
-                    "This pass is unsigned. Walt cannot verify who created it."
+                    "This pass is unsigned. This app cannot verify who created it."
                 )
             }
         }()

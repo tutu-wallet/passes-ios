@@ -283,7 +283,7 @@ private struct DomainHeroLayout: View {
         let muted = (emphasis?.mutedForeground ?? ArgbColor(argb: 0xFFC4C7C5)).swiftUIColor
         let eyebrowCopy: String = {
             switch kind {
-            case .url: return "LEAVING WALT"
+            case .url: return "LEAVING THIS APP"
             case .phone: return "CALLING"
             case .email: return "EMAILING"
             }

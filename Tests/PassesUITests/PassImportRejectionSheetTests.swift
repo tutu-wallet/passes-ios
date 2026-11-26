@@ -13,25 +13,25 @@ struct PassImportRejectionSheetTests {
     @Test func tamperedCopyDisclosesTheSecurityEvent() {
         let copy = PassImportRejectionSheet.rejectionCopy(.tampered)
         #expect(copy.title == "This pass appears to have been tampered with")
-        #expect(copy.body == "The signature does not match the file's contents. Walt did not save this pass.")
+        #expect(copy.body == "The signature does not match the file's contents. This app did not save this pass.")
     }
 
     @Test func malformedCopyIsStructuralNotSecurity() {
         let copy = PassImportRejectionSheet.rejectionCopy(.malformed)
         #expect(copy.title == "This file is not a valid pass")
-        #expect(copy.body == "Walt could not read this file as a PKPASS archive.")
+        #expect(copy.body == "This app could not read this file as a PKPASS archive.")
     }
 
     @Test func unsupportedCopy() {
         let copy = PassImportRejectionSheet.rejectionCopy(.unsupported)
-        #expect(copy.title == "Walt cannot open this pass")
-        #expect(copy.body == "This pass uses a format Walt does not support.")
+        #expect(copy.title == "This app cannot open this pass")
+        #expect(copy.body == "This pass uses a format this app does not support.")
     }
 
     @Test func resourceLimitCopy() {
         let copy = PassImportRejectionSheet.rejectionCopy(.resourceLimitExceeded)
         #expect(copy.title == "This pass is too large to open safely")
-        #expect(copy.body == "The pass exceeded Walt's safety limits and was not loaded.")
+        #expect(copy.body == "The pass exceeded this app's safety limits and was not loaded.")
     }
 
     @Test func everyArmHasDistinctCopy() {

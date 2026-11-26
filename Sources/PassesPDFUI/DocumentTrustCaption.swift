@@ -47,7 +47,7 @@ public struct DocumentTrustCaption: View {
     /// wallet-list path nor a deep-linked path can bypass it. The
     /// duplication is deliberate.
     public static let trustCaptionText: String =
-        "User-provided document. Walt has not verified the source."
+        "User-provided document. This app has not verified the source."
 }
 
 extension ArgbColor {
