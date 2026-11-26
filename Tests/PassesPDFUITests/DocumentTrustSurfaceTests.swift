@@ -22,7 +22,7 @@ struct DocumentTrustSurfaceTests {
         // test.
         #expect(
             DocumentTrustCaption.trustCaptionText
-                == "User-provided document. Walt has not verified the source."
+                == "User-provided document. This app has not verified the source."
         )
     }
 

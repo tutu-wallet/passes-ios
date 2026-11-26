@@ -81,22 +81,22 @@ public struct PassImportRejectionSheet: View {
         case .tampered:
             return RejectionCopy(
                 title: "This pass appears to have been tampered with",
-                body: "The signature does not match the file's contents. Walt did not save this pass."
+                body: "The signature does not match the file's contents. This app did not save this pass."
             )
         case .malformed:
             return RejectionCopy(
                 title: "This file is not a valid pass",
-                body: "Walt could not read this file as a PKPASS archive."
+                body: "This app could not read this file as a PKPASS archive."
             )
         case .unsupported:
             return RejectionCopy(
-                title: "Walt cannot open this pass",
-                body: "This pass uses a format Walt does not support."
+                title: "This app cannot open this pass",
+                body: "This pass uses a format this app does not support."
             )
         case .resourceLimitExceeded:
             return RejectionCopy(
                 title: "This pass is too large to open safely",
-                body: "The pass exceeded Walt's safety limits and was not loaded."
+                body: "The pass exceeded this app's safety limits and was not loaded."
             )
         }
     }
